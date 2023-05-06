@@ -56,12 +56,11 @@ export default function CheckoutForm() {
 
     setIsLoading(true);
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        // Make sure to change this to your payment completion page
-        return_url: "http://localhost:3000",
-      },
+    const paymentElement = elements.getElement(PaymentElement);
+
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: "card",
+      card: paymentElement,
     });
 
     // This point will only be reached if there is an immediate error when
@@ -79,20 +78,21 @@ export default function CheckoutForm() {
   };
 
   const paymentElementOptions = {
-    email,
     layout: "tabs",
   };
 
   return (
     <form id="payment-form" onSubmit={handleSubmit}>
-      <LinkAuthenticationElement
-        id="link-authentication-element"
-        onChange={(e) => setEmail(e.target.value)}
-      />
       <PaymentElement id="payment-element" options={paymentElementOptions} />
       <button disabled={isLoading || !stripe || !elements} id="submit">
         <span id="button-text">
-          {isLoading ? <div className="spinner" id="spinner"></div> : "Pay now"}
+          {isLoading ? (
+            <div className="spinner" id="spinner">
+              Wait
+            </div>
+          ) : (
+            "Pay now"
+          )}
         </span>
       </button>
 

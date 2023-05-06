@@ -40,7 +40,7 @@ export default function App() {
 
   return (
     <div className="App" style={{ margin: "auto", maxWidth: "500px" }}>
-      <button
+      {/* <button
         onClick={async () => {
           fetch("/api/create-user", {
             method: "POST",
@@ -77,13 +77,15 @@ export default function App() {
         }}
       >
         New Card
-      </button>
+      </button> */}
+
       {clientSecret && (
         <Elements options={options} stripe={stripePromise}>
           <CheckoutForm />
         </Elements>
       )}
-      <button
+
+      {/* <button
         onClick={async () => {
           // ! Ye API hai jissee tum user ka card details fetch kar skit ho
           // ^ user ne kon sa default payment set kiya hai wo dekh skti ho
@@ -99,7 +101,7 @@ export default function App() {
         }}
       >
         Fetch Cards
-      </button>
+      </button> */}
 
       {paymentLists?.map((card, index) => {
         return (
