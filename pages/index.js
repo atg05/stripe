@@ -1,115 +1,123 @@
-import Head from 'next/head';
-import styles from '../styles/Home.module.css';
+import React, { useState } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
 
-export default function Home() {
+import CheckoutForm from "./components/CheckoutForm";
+
+// Make sure to call loadStripe outside of a component’s render to avoid
+// recreating the Stripe object on every render.
+// This is your test publishable API key.
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+);
+
+export default function App() {
+  const [clientSecret, setClientSecret] = React.useState("");
+  const email = "Sanjay@gmail.com";
+  React.useEffect(async () => {
+    // Create PaymentIntent as soon as the page loads
+    await fetch("/api/create-payment-intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: [{ id: "xl-tshirt" }], email }),
+    })
+      .then((res) => res.json())
+      .then((data) => setClientSecret(data.clientSecret));
+  }, []);
+
+  const appearance = {
+    theme: "stripe",
+  };
+  const options = {
+    clientSecret,
+    appearance,
+  };
+
+  const [userDetails, setUserDetails] = useState(null);
+  const [paymentLists, setPaymentLists] = useState(null);
+
+  console.log(paymentLists);
+
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <div className="App" style={{ margin: "auto", maxWidth: "500px" }}>
+      <button
+        onClick={async () => {
+          fetch("/api/create-user", {
+            method: "POST",
+            body: JSON.stringify({
+              name: "Avinash Kumar",
+              email: "aviansh@gmail.com",
+              description: "Just a customer",
+            }),
+          }).then((res) => {
+            setUserDetails(res);
+            console.log(res);
+          });
+        }}
+      >
+        New user
+      </button>
+      <button
+        style={{ display: "block" }}
+        onClick={async () => {
+          fetch("/api/new-card", {
+            method: "POST",
+            body: JSON.stringify({
+              // customerId: userDetails.id,
+              source: "tok_mastercard",
+            }),
+          })
+            .then((res) => {
+              setUserDetails(res);
+              console.log(res);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        }}
+      >
+        New Card
+      </button>
+      {clientSecret && (
+        <Elements options={options} stripe={stripePromise}>
+          <CheckoutForm />
+        </Elements>
+      )}
+      <button
+        onClick={async () => {
+          // ! Ye API hai jissee tum user ka card details fetch kar skit ho
+          // ^ user ne kon sa default payment set kiya hai wo dekh skti ho
+          const response = await fetch(`/api/saved-card-list`)
+            .then((res) => res.json())
+            .then((res) => {
+              setPaymentLists(res.data);
+            });
+          // const jsonData = response.json();
+          // console.log(jsonData);
 
-      <main>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+          // setPaymentLists(jsonData);
+        }}
+      >
+        Fetch Cards
+      </button>
 
-        <p className={styles.description}>
-          Get started by editing <code>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
+      {paymentLists?.map((card, index) => {
+        return (
+          <div
+            style={{
+              border: "1px solid gray",
+              marginTop: "20px",
+              padding: "5px",
+              borderradius: "4px",
+            }}
           >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel" className={styles.logo} />
-        </a>
-      </footer>
-
-      <style jsx>{`
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-        footer img {
-          margin-left: 0.5rem;
-        }
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          text-decoration: none;
-          color: inherit;
-        }
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-      `}</style>
-
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
+            <input type="text" value={card.card.last4} />
+            <div>
+              <input style={{ width: "60px" }} value={card.card.exp_year} />
+            </div>
+          </div>
+        );
+      })}
     </div>
-  )
+  );
 }
