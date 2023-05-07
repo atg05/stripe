@@ -56,12 +56,10 @@ export default function CheckoutForm() {
 
     setIsLoading(true);
 
-    const paymentElement = elements.getElement(PaymentElement);
-
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: "card",
-      card: paymentElement,
-    });
+    // const { error, paymentMethod } = await stripe.createPaymentMethod({
+    //   type: "card",
+    //   card: paymentElement,
+    // });
 
     // This point will only be reached if there is an immediate error when
     // confirming the payment. Otherwise, your customer will be redirected to
@@ -80,6 +78,13 @@ export default function CheckoutForm() {
   const paymentElementOptions = {
     layout: "tabs",
   };
+
+  // paymentElement.on("change", function (event) {
+  //   if (event.complete) {
+  //     console.log(event);
+  //     // enable payment button
+  //   }
+  // });
 
   return (
     <form id="payment-form" onSubmit={handleSubmit}>

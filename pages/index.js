@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+// import "../styles/Styles.css";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 
 import CheckoutForm from "./components/CheckoutForm";
+import CardSetupForm from "./components/CardSetupForm";
 
 // Make sure to call loadStripe outside of a component’s render to avoid
 // recreating the Stripe object on every render.
@@ -12,24 +14,10 @@ const stripePromise = loadStripe(
 );
 
 export default function App() {
-  const [clientSecret, setClientSecret] = React.useState("");
-  const email = "Sanjay@gmail.com";
-  React.useEffect(async () => {
-    // Create PaymentIntent as soon as the page loads
-    await fetch("/api/create-payment-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: [{ id: "xl-tshirt" }], email }),
-    })
-      .then((res) => res.json())
-      .then((data) => setClientSecret(data.clientSecret));
-  }, []);
-
   const appearance = {
     theme: "stripe",
   };
   const options = {
-    clientSecret,
     appearance,
   };
 
@@ -79,11 +67,9 @@ export default function App() {
         New Card
       </button> */}
 
-      {clientSecret && (
-        <Elements options={options} stripe={stripePromise}>
-          <CheckoutForm />
-        </Elements>
-      )}
+      <Elements options={options} stripe={stripePromise}>
+        <CardSetupForm />
+      </Elements>
 
       {/* <button
         onClick={async () => {
