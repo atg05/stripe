@@ -1,21 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
+import React, { useState } from "react";
+import {
+  useStripe,
+  useElements,
+  PaymentElement,
+} from "@stripe/react-stripe-js";
 
-import CardSection from "./cardSection/CardSection";
-
-export default function CardSetupForm() {
+const SetupForm = ({ updatePaymentList }) => {
   const stripe = useStripe();
   const elements = useElements();
-  const [clientSecret, setClientSecret] = useState(null);
 
-  useEffect(async () => {
-    // Create PaymentIntent as soon as the page loads
-    await fetch("/api/secret")
-      .then((res) => res.json())
-      .then((data) => {
-        setClientSecret(data.client_secret);
-      });
-  }, []);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleSubmit = async (event) => {
     // We don't want to let default form submission happen here,
@@ -25,40 +19,43 @@ export default function CardSetupForm() {
     if (!stripe || !elements) {
       // Stripe.js hasn't yet loaded.
       // Make sure to disable form submission until Stripe.js has loaded.
-      return;
+      return null;
     }
-    console.log(clientSecret);
 
-    const result = await stripe.confirmCardSetup(clientSecret, {
-      payment_method: {
-        card: elements.getElement(CardElement),
-        billing_details: {
-          name: "Jenny Rosen",
-        },
-      },
+    const { error } = await stripe.confirmSetup({
+      //`Elements` instance that was used to create the Payment Element
+      elements,
+      redirect: "if_required",
     });
 
-    console.log(result);
-
-    if (result.error) {
-      // Display result.error.message in your UI.
+    if (error) {
+      // This point will only be reached if there is an immediate error when
+      // confirming the payment. Show error to your customer (for example, payment
+      // details incomplete)
+      setErrorMessage(error.message);
     } else {
-      fetch("/api/new-card", {
-        method: "POST",
-        body: JSON.stringify({
-          payment_method: result.setupIntent.payment_method,
-        }),
-      });
-      // The setup has succeeded. Display a success message and send
-      // result.setupIntent.payment_method to your server to save the
-      // card to a Customer
+      await fetch(`/api/saved-card-list/?customerID=${"cus_NqKbkn5vgX48IX"}`)
+        .then((res) => res.json())
+        .then((res) => {
+          console.log(res.data);
+          updatePaymentList(res.data || []);
+        });
+
+      alert("Card Saved , Or you can send notification");
+      // Your customer will be redirected to your `return_url`. For some payment
+      // methods like iDEAL, your customer will be redirected to an intermediate
+      // site first to authorize the payment, then redirected to the `return_url`.
     }
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <CardSection />
-      <button disabled={!stripe}>Save Card</button>
+      <PaymentElement />
+      <button disabled={!stripe}>Submit</button>
+      {/* Show error message to your customers */}
+      {errorMessage && <div>{errorMessage}</div>}
     </form>
   );
-}
+};
+
+export default SetupForm;

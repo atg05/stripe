@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 // import "../styles/Styles.css";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 
-import CheckoutForm from "./components/CheckoutForm";
 import CardSetupForm from "./components/CardSetupForm";
 
 // Make sure to call loadStripe outside of a component’s render to avoid
 // recreating the Stripe object on every render.
 // This is your test publishable API key.
+
+// First Thing
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 );
@@ -16,74 +17,55 @@ const stripePromise = loadStripe(
 export default function App() {
   const appearance = {
     theme: "stripe",
+    layout: "tabs",
   };
+
+  const [clientSecret, setClientSecret] = useState(null);
+  const [paymentLists, setPaymentLists] = useState(null);
+
+  useEffect(async () => {
+    // Create PaymentIntent as soon as the page loads
+    await fetch("/api/secret")
+      .then((res) => res.json())
+      .then((data) => {
+        setClientSecret(data.client_secret);
+      });
+
+    await fetch(`/api/saved-card-list/?customerID=${"cus_NqKbkn5vgX48IX"}`)
+      .then((res) => res.json())
+      .then((res) => {
+        console.log(res.data);
+        setPaymentLists(res.data || []);
+      });
+  }, []);
+
   const options = {
+    clientSecret,
     appearance,
   };
 
-  const [userDetails, setUserDetails] = useState(null);
-  const [paymentLists, setPaymentLists] = useState(null);
-
-  console.log(paymentLists);
+  function updatePaymentList(payments) {
+    setPaymentLists(payments);
+  }
 
   return (
     <div className="App" style={{ margin: "auto", maxWidth: "500px" }}>
-      {/* <button
-        onClick={async () => {
-          fetch("/api/create-user", {
-            method: "POST",
-            body: JSON.stringify({
-              name: "Avinash Kumar",
-              email: "aviansh@gmail.com",
-              description: "Just a customer",
-            }),
-          }).then((res) => {
-            setUserDetails(res);
-            console.log(res);
-          });
-        }}
-      >
-        New user
-      </button>
-      <button
-        style={{ display: "block" }}
-        onClick={async () => {
-          fetch("/api/new-card", {
-            method: "POST",
-            body: JSON.stringify({
-              // customerId: userDetails.id,
-              source: "tok_mastercard",
-            }),
-          })
-            .then((res) => {
-              setUserDetails(res);
-              console.log(res);
-            })
-            .catch((err) => {
-              console.log(err);
-            });
-        }}
-      >
-        New Card
-      </button> */}
-
-      <Elements options={options} stripe={stripePromise}>
-        <CardSetupForm />
-      </Elements>
+      {clientSecret && (
+        <Elements options={options} stripe={stripePromise}>
+          <CardSetupForm updatePaymentList={updatePaymentList} />
+        </Elements>
+      )}
 
       {/* <button
         onClick={async () => {
-          // ! Ye API hai jissee tum user ka card details fetch kar skit ho
-          // ^ user ne kon sa default payment set kiya hai wo dekh skti ho
-          const response = await fetch(`/api/saved-card-list`)
+          await fetch(
+            `/api/saved-card-list/?customerID=${"cus_NqKbkn5vgX48IX"}`
+          )
             .then((res) => res.json())
             .then((res) => {
+              console.log(res.data);
               setPaymentLists(res.data);
             });
-          // const jsonData = response.json();
-          // console.log(jsonData);
-
-          // setPaymentLists(jsonData);
         }}
       >
         Fetch Cards
@@ -102,6 +84,20 @@ export default function App() {
             <input type="text" value={card.card.last4} />
             <div>
               <input style={{ width: "60px" }} value={card.card.exp_year} />
+              <button
+                disabled={card.default}
+                onClick={async () => {
+                  await fetch("/api/update-payment-method", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      customerID: "cus_NqKbkn5vgX48IX",
+                      paymentMethodID: card.id,
+                    }),
+                  });
+                }}
+              >
+                {card.default ? "Default" : "Update Default Payment"}
+              </button>
             </div>
           </div>
         );
