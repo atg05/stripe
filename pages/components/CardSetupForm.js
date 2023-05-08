@@ -40,7 +40,7 @@ const SetupForm = ({ updatePaymentList }) => {
           console.log(res.data);
           updatePaymentList(res.data || []);
         });
-
+      elements.getElement(PaymentElement).clear();
       alert("Card Saved , Or you can send notification");
       // Your customer will be redirected to your `return_url`. For some payment
       // methods like iDEAL, your customer will be redirected to an intermediate
