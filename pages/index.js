@@ -48,6 +48,26 @@ export default function App() {
     setPaymentLists(payments);
   }
 
+  const defaultCardStyle = {
+    borderRadius: "100%",
+    border: "2px solid red",
+    padding: "2px",
+    height: "10px",
+    width: "10px",
+    backgroundColor: "blue",
+    margin: "1px",
+    margingLeft: "auto",
+  };
+  const CardStyle = {
+    borderRadius: "100%",
+    border: "2px solid red",
+    padding: "2px",
+    height: "10px",
+    width: "10px",
+    margin: "1px",
+    margingLeft: "auto",
+  };
+
   return (
     <div className="App" style={{ margin: "auto", maxWidth: "500px" }}>
       {clientSecret && (
@@ -86,6 +106,7 @@ export default function App() {
               <input style={{ width: "60px" }} value={card.card.exp_year} />
               <button
                 disabled={card.default}
+                style={card.default ? defaultCardStyle : CardStyle}
                 onClick={async () => {
                   await fetch("/api/update-payment-method", {
                     method: "POST",
@@ -104,9 +125,7 @@ export default function App() {
                       setPaymentLists(res.data || []);
                     });
                 }}
-              >
-                {card.default ? "Default" : "Update Default Payment"}
-              </button>
+              ></button>
             </div>
           </div>
         );
