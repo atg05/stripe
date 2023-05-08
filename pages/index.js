@@ -94,6 +94,15 @@ export default function App() {
                       paymentMethodID: card.id,
                     }),
                   });
+
+                  await fetch(
+                    `/api/saved-card-list/?customerID=${"cus_NqKbkn5vgX48IX"}`
+                  )
+                    .then((res) => res.json())
+                    .then((res) => {
+                      console.log(res.data);
+                      setPaymentLists(res.data || []);
+                    });
                 }}
               >
                 {card.default ? "Default" : "Update Default Payment"}
