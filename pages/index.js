@@ -1,18 +1,10 @@
 import React, { useEffect, useState } from "react";
 // import "../styles/Styles.css";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements } from "@stripe/react-stripe-js";
-
-import CardSetupForm from "./components/CardSetupForm";
+import PopUp from "./components/PopUp";
 
 // Make sure to call loadStripe outside of a component’s render to avoid
 // recreating the Stripe object on every render.
 // This is your test publishable API key.
-
-// First Thing
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-);
 
 export default function App() {
   const appearance = {
@@ -23,20 +15,30 @@ export default function App() {
   const [clientSecret, setClientSecret] = useState(null);
   const [paymentLists, setPaymentLists] = useState(null);
 
-  useEffect(async () => {
+  async function updateClientScret() {
     // Create PaymentIntent as soon as the page loads
     await fetch("/api/secret")
       .then((res) => res.json())
       .then((data) => {
         setClientSecret(data.client_secret);
       });
+  }
 
+  const fetchPaymentList = async () => {
     await fetch(`/api/saved-card-list/?customerID=${"cus_NqKbkn5vgX48IX"}`)
       .then((res) => res.json())
       .then((res) => {
         console.log(res.data);
         setPaymentLists(res.data || []);
       });
+  };
+
+  const handlePopup = () => {
+    setPopUp((state) => !state);
+  };
+
+  useEffect(() => {
+    fetchPaymentList();
   }, []);
 
   const options = {
@@ -68,13 +70,24 @@ export default function App() {
     margingLeft: "auto",
   };
 
+  const [popUp, setPopUp] = useState(false);
+
   return (
     <div className="App" style={{ margin: "auto", maxWidth: "500px" }}>
-      {clientSecret && (
-        <Elements options={options} stripe={stripePromise}>
-          <CardSetupForm updatePaymentList={updatePaymentList} />
-        </Elements>
+      {popUp && (
+        <PopUp
+          updatePaymentList={updatePaymentList}
+          handlePopup={handlePopup}
+        />
       )}
+
+      <button
+        onClick={() => {
+          setPopUp((state) => !state);
+        }}
+      >
+        Add
+      </button>
 
       {/* <button
         onClick={async () => {
